@@ -1,0 +1,16 @@
+version: "2"
+rules:
+  - name: sqlcshare-marker
+    message: "query was not produced by sqlcshare (missing /* sqlcshare */ marker)"
+    rule: "!query.sql.contains('/* sqlcshare */')"
+sql:
+  - engine: "postgresql"
+    schema: "schema"
+    queries: "gen/sql"
+    rules:
+      - sqlcshare-marker
+    gen:
+      go:
+        package: "pgvet"
+        out: "out/vet"
+        sql_package: "pgx/v5"

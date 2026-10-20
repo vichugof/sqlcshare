@@ -1,0 +1,3 @@
+# package p2_cte_column_vs_arg_positional
+probes/p2_cte_column_vs_arg.sql:7:7: table alias "r" does not exist
+exit=1

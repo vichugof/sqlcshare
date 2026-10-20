@@ -1,0 +1,9 @@
+version: "2"
+sql:
+  - engine: "mysql"
+    schema: "schema"
+    queries: "queries"
+    gen:
+      go:
+        package: "mysources"
+        out: "out/sources"

@@ -1,0 +1,24 @@
+version: "2"
+options:
+  sqlcshare:
+    fragments: fragments
+    sources: queries
+    out: gen/sql
+sql:
+  - engine: "postgresql"
+    schema: "schema"
+    queries: "gen/sql"
+    gen:
+      go:
+        package: "pgstruct"
+        out: "out/corpus_struct"
+        sql_package: "pgx/v5"
+  - engine: "postgresql"
+    schema: "schema"
+    queries: "gen/sql"
+    gen:
+      go:
+        package: "pgpos"
+        out: "out/corpus_positional"
+        sql_package: "pgx/v5"
+        query_parameter_limit: 10

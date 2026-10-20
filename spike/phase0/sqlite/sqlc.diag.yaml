@@ -1,0 +1,9 @@
+version: "2"
+sql:
+  - engine: "sqlite"
+    schema: "schema"
+    queries: "diag"
+    gen:
+      go:
+        package: "litediag"
+        out: "out/diag_all"

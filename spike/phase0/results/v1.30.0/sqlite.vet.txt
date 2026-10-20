@@ -1,0 +1,7 @@
+authors.sql: CountAuthors: sqlcshare-marker: query was not produced by sqlcshare (missing /* sqlcshare */ marker)
+authors.sql: GetAuthor: sqlcshare-marker: query was not produced by sqlcshare (missing /* sqlcshare */ marker)
+authors.sql: ListAuthorsWithOrg: sqlcshare-marker: query was not produced by sqlcshare (missing /* sqlcshare */ marker)
+authors.sql: ListAuthorsWithPeers: sqlcshare-marker: query was not produced by sqlcshare (missing /* sqlcshare */ marker)
+authors.sql: SearchAuthors: sqlcshare-marker: query was not produced by sqlcshare (missing /* sqlcshare */ marker)
+authors.sql: ListAuthorsEmbed: sqlcshare-marker: query was not produced by sqlcshare (missing /* sqlcshare */ marker)
+exit=1

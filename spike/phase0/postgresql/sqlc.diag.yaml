@@ -1,0 +1,10 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    schema: "schema"
+    queries: "diag"
+    gen:
+      go:
+        package: "pgdiag"
+        out: "out/diag_all"
+        sql_package: "pgx/v5"

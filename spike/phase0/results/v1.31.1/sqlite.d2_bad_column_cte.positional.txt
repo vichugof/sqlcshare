@@ -1,0 +1,3 @@
+# package d2_bad_column_cte_positional
+diag/d2_bad_column_cte.sql:3:55: column "creatd_at" does not exist
+exit=1

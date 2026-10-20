@@ -1,0 +1,9 @@
+version: "2"
+sql:
+  - engine: "mysql"
+    schema: "schema"
+    queries: "diag"
+    gen:
+      go:
+        package: "mydiag"
+        out: "out/diag_all"

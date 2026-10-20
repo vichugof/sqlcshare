@@ -1,0 +1,5 @@
+line 5:11 no viable alternative at input '='
+line 5:25 mismatched input ';' expecting {')', ','}
+# package d3_syntax_error_fragment_positional
+diag/d3_syntax_error_fragment.sql:1:1: mismatched input ';' expecting {')', ','}
+exit=1

@@ -1,0 +1,22 @@
+version: "2"
+options:
+  sqlcshare:
+    fragments: fragments
+    sources: queries
+    out: gen/sql
+sql:
+  - engine: "mysql"
+    schema: "schema"
+    queries: "gen/sql"
+    gen:
+      go:
+        package: "mystruct"
+        out: "out/corpus_struct"
+  - engine: "mysql"
+    schema: "schema"
+    queries: "gen/sql"
+    gen:
+      go:
+        package: "mypos"
+        out: "out/corpus_positional"
+        query_parameter_limit: 10

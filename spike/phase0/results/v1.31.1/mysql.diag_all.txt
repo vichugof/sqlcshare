@@ -1,0 +1,8 @@
+# package mydiag
+diag/d3_syntax_error_fragment.sql:5:27: syntax error near ";"
+diag/d4_two_fragments_one_line.sql:2:92: column "org_idd" does not exist
+diag/d5_unexpanded_directive.sql:1:1: function "sqlc.fragment" does not exist
+diag/d6_multiline_cte_shift.sql:11:7: column "nam" does not exist
+diag/d7_two_errors_two_queries.sql:2:14: column "nam" does not exist
+diag/d7_two_errors_two_queries.sql:5:42: column "idd" does not exist
+exit=1

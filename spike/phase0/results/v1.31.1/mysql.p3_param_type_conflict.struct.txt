@@ -1,0 +1,3 @@
+# package p3_param_type_conflict_struct
+error generating code: named param OrgID has incompatible types: string, int64
+exit=1

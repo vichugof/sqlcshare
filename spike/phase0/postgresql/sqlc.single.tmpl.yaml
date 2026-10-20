@@ -1,0 +1,11 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    schema: "schema"
+    queries: "__QUERIES__"
+    gen:
+      go:
+        package: "__PKG__"
+        out: "__OUT__"
+        sql_package: "pgx/v5"
+        query_parameter_limit: __LIMIT__

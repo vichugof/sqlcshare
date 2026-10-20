@@ -1,0 +1,8 @@
+# Build and test outputs
+/sqlcshare
+*.test
+*.prof
+coverage.out
+
+# Scratch output of the Phase 0 spike; run.sh copies what matters into results/
+spike/phase0/*/out/

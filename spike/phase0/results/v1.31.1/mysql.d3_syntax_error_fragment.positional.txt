@@ -1,0 +1,3 @@
+# package d3_syntax_error_fragment_positional
+diag/d3_syntax_error_fragment.sql:5:27: syntax error near ";"
+exit=1

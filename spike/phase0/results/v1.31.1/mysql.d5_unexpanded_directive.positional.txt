@@ -1,0 +1,3 @@
+# package d5_unexpanded_directive_positional
+diag/d5_unexpanded_directive.sql:1:1: function "sqlc.fragment" does not exist
+exit=1

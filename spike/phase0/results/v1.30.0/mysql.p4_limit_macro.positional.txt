@@ -1,0 +1,3 @@
+# package p4_limit_macro_positional
+probes/p4_limit_macro.sql:6:11: syntax error near "sqlc.arg(page_size);"
+exit=1

@@ -1,0 +1,3 @@
+# package d6_multiline_cte_shift_positional
+diag/d6_multiline_cte_shift.sql:11:7: column "nam" does not exist
+exit=1

@@ -1,0 +1,15 @@
+version: "2"
+rules:
+  - name: sqlcshare-marker
+    message: "query was not produced by sqlcshare (missing /* sqlcshare */ marker)"
+    rule: "!query.sql.contains('/* sqlcshare */')"
+sql:
+  - engine: "mysql"
+    schema: "schema"
+    queries: "gen/sql"
+    rules:
+      - sqlcshare-marker
+    gen:
+      go:
+        package: "myvet"
+        out: "out/vet"

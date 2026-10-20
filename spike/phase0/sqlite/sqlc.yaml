@@ -1,0 +1,22 @@
+version: "2"
+options:
+  sqlcshare:
+    fragments: fragments
+    sources: queries
+    out: gen/sql
+sql:
+  - engine: "sqlite"
+    schema: "schema"
+    queries: "gen/sql"
+    gen:
+      go:
+        package: "litestruct"
+        out: "out/corpus_struct"
+  - engine: "sqlite"
+    schema: "schema"
+    queries: "gen/sql"
+    gen:
+      go:
+        package: "litepos"
+        out: "out/corpus_positional"
+        query_parameter_limit: 10

@@ -1,0 +1,4 @@
+# package d7_two_errors_two_queries_positional
+diag/d7_two_errors_two_queries.sql:2:14: column "nam" does not exist
+diag/d7_two_errors_two_queries.sql:5:42: column "idd" does not exist
+exit=1

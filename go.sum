@@ -1,0 +1,16 @@
+github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=
+github.com/google/go-cmp v0.7.0/go.mod h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU=
+github.com/sqlc-dev/marino v0.3.1 h1:5LkfxftC+drpX1NE6ULTSJlRQ3FzvaFgmXSik+s0Q1Y=
+github.com/sqlc-dev/marino v0.3.1/go.mod h1:mQxC2dgDE0DWHMb2B5jZNk7KToJuS6wnxnffBfYnq08=
+github.com/sqlc-dev/meyer v0.1.2 h1:40Ng9Glnx7CTf3yOYV7jfvDIN7voIFjrStkIULS+uws=
+github.com/sqlc-dev/meyer v0.1.2/go.mod h1:pS4USCRf/SLjWtaMcnTo4YrEEFKBj8CyyqlxcVUJQH8=
+github.com/sqlc-dev/oliphant v0.2.0 h1:jJ/s2fh4Plj3U1HsdqiY/clw/IHb4FCNaHfqirwxcsI=
+github.com/sqlc-dev/oliphant v0.2.0/go.mod h1:fRM/t4FutRddTIq2YCuS4O9o+2rRwSwELRvLMqtPloo=
+golang.org/x/text v0.19.0 h1:kTxAhCbGbxhK0IwgSKiMO5awPoDQ0RpfiVYBfK860YM=
+golang.org/x/text v0.19.0/go.mod h1:BuEKDfySbSR4drPmRPG/7iBdf8hvFMuRexcpahXilzY=
+google.golang.org/protobuf v1.36.12 h1:pJOKDDOyeXErUroCihFAd5LQuwXBSpVnKGrj5o/fwxc=
+google.golang.org/protobuf v1.36.12/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
+gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=

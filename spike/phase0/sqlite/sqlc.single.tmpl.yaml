@@ -1,0 +1,10 @@
+version: "2"
+sql:
+  - engine: "sqlite"
+    schema: "schema"
+    queries: "__QUERIES__"
+    gen:
+      go:
+        package: "__PKG__"
+        out: "__OUT__"
+        query_parameter_limit: __LIMIT__
