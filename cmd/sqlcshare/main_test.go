@@ -64,6 +64,9 @@ sql:
 	if code := exec("generate", "-f", filepath.Join(root, "sqlc.yaml"), "-no-sqlc"); code != 0 {
 		t.Errorf("generate -no-sqlc: exit %d\n%s%s", code, stdout.String(), stderr.String())
 	}
+	if code := exec("stats", "-f", filepath.Join(root, "sqlc.yaml")); code != 0 || !strings.Contains(stdout.String(), "author_cols") || !strings.Contains(stdout.String(), "statements") {
+		t.Errorf("stats: exit %d\n%s%s", code, stdout.String(), stderr.String())
+	}
 	if code := exec("generate", "-f", filepath.Join(root, "sqlc.yaml"), "-sqlc", "definitely-not-a-command-xyz"); code != 1 || !strings.Contains(stderr.String(), "running definitely-not-a-command-xyz") {
 		t.Errorf("missing sqlc binary: exit %d\n%s", code, stderr.String())
 	}

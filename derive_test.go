@@ -29,7 +29,7 @@ func TestDeriveCount(t *testing.T) {
 			in: "-- derive: CountG :count\n-- name: Grouped :many\n" +
 				"WITH /*%cte recent*/ recent AS (SELECT 1) /*%end*/\nSELECT a.org_id, count(*) FROM authors a JOIN recent r ON r.id = a.id GROUP BY a.org_id ORDER BY 2 DESC;",
 			want: "-- name: CountG :one\n-- sqlcshare: q.sql:1 (count of Grouped, cte recent)\n" +
-				"WITH /* sqlcshare */ recent AS (SELECT o.* FROM orders o\nWHERE o.created_at > sqlc.narg(since)::timestamptz)\n" +
+				"WITH /* sqlcshare */ recent AS (SELECT o.* FROM orders o\n                     WHERE o.created_at > sqlc.narg(since)::timestamptz)\n" +
 				"SELECT count(*) FROM (SELECT a.org_id, count(*) FROM authors a JOIN recent r ON r.id = a.id GROUP BY a.org_id) AS sqlcshare_count;",
 			info: "counted through a derived table because the statement uses GROUP",
 			uses: "cte recent",

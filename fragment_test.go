@@ -135,10 +135,29 @@ func TestLoad(t *testing.T) {
 	if _, diags := Load(PostgreSQL, fsys, "fragments", "extra/dup.sql"); !diags.HasErrors() || diags[0].Pos.String() != "extra/dup.sql:1:1" || !strings.Contains(diags[0].Message, `fragment "one" is already defined at fragments/a.sql:1:1`) {
 		t.Errorf("duplicate across files: %v", diags)
 	}
-	if _, diags := Load(PostgreSQL, fsys, "missing"); !diags.HasErrors() {
-		t.Error("missing path should be an error")
+	if _, diags := Load(PostgreSQL, fsys, "missing"); !diags.HasErrors() || diags[0].Message != "fragments: missing does not exist" {
+		t.Errorf("missing path should be an error: %v", diags)
 	}
-	if _, diags := Load(PostgreSQL, fsys, "extra/none*.sql"); !diags.HasErrors() {
-		t.Error("glob without matches should be an error")
+	if _, diags := Load(PostgreSQL, fsys, "extra/none*.sql"); !diags.HasErrors() || diags[0].Message != "fragments: extra/none*.sql matches no file or directory" {
+		t.Errorf("glob without matches should be an error: %v", diags)
+	}
+	// A ** segment matches any number of directories; like fs.Glob, it does
+	// not apply the directory-listing rule, so hidden and .down files match.
+	lib, diags = Load(PostgreSQL, fsys, "fragments/**/*.sql")
+	if len(diags) != 0 {
+		t.Fatalf("unexpected diagnostics:\n%v", diags)
+	}
+	names = nil
+	for _, f := range lib.Fragments() {
+		names = append(names, f.Name)
+	}
+	if got, want := strings.Join(names, ","), "hidden,one,two,nested,down"; got != want {
+		t.Errorf("** glob: got %s, want %s", got, want)
+	}
+	if files, err := resolveSQLFiles(fsys, []string{"**/glob?.sql", "extra/**"}); err != nil || strings.Join(files, ",") != "extra/glob1.sql,extra/glob2.sql,extra/dup.sql" {
+		t.Errorf("** globs: %v %v", files, err)
+	}
+	if _, err := resolveSQLFiles(fsys, []string{"**/[.sql"}); err == nil {
+		t.Error("bad ** pattern should be an error")
 	}
 }

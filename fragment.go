@@ -2,6 +2,8 @@ package sqlcshare
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"io/fs"
 	"path"
 	"regexp"
@@ -73,7 +75,7 @@ func Load(engine Engine, fsys fs.FS, patterns ...string) (*Library, Diagnostics)
 	var diags Diagnostics
 	files, err := resolveSQLFiles(fsys, patterns)
 	if err != nil {
-		diags.add(Pos{}, Error, "%v", err)
+		diags.add(Pos{}, Error, "fragments: %v", err)
 		return lib, diags
 	}
 	for _, name := range files {
@@ -253,7 +255,9 @@ func validateFragmentBody(engine Engine, f *Fragment) Diagnostics {
 }
 
 // resolveSQLFiles expands patterns to a de-duplicated list of files, in
-// pattern order and sorted within each pattern.
+// pattern order and sorted within each pattern. A pattern is a file, a
+// directory, or a glob in which a "**" segment matches any number of
+// directories.
 func resolveSQLFiles(fsys fs.FS, patterns []string) ([]string, error) {
 	seen := map[string]bool{}
 	var files []string
@@ -262,17 +266,25 @@ func resolveSQLFiles(fsys fs.FS, patterns []string) ([]string, error) {
 		matches := []string{p}
 		if strings.ContainsAny(p, "*?[") {
 			var err error
-			if matches, err = fs.Glob(fsys, p); err != nil {
+			if strings.Contains(p, "**") {
+				matches, err = globStar(fsys, p)
+			} else {
+				matches, err = fs.Glob(fsys, p)
+			}
+			if err != nil {
 				return nil, err
 			}
 			if len(matches) == 0 {
-				return nil, &fs.PathError{Op: "glob", Path: p, Err: fs.ErrNotExist}
+				return nil, fmt.Errorf("%s matches no file or directory", p)
 			}
 			sort.Strings(matches)
 		}
 		var found []string
 		for _, m := range matches {
 			info, err := fs.Stat(fsys, m)
+			if errors.Is(err, fs.ErrNotExist) {
+				return nil, fmt.Errorf("%s does not exist", m)
+			}
 			if err != nil {
 				return nil, err
 			}
@@ -299,6 +311,70 @@ func resolveSQLFiles(fsys fs.FS, patterns []string) ([]string, error) {
 		}
 	}
 	return files, nil
+}
+
+// globStar matches a pattern in which a "**" segment stands for zero or more
+// directories (hidden ones excluded); the other segments follow path.Match.
+// A trailing "**" lists every query file below the directory, at any depth.
+// fs.Glob has no such segment, and sqlc lists a queries directory one level
+// deep, so this is how a tree of query directories such as adapter/*/query
+// and adapter/*/*/query is named once.
+func globStar(fsys fs.FS, pattern string) ([]string, error) {
+	if _, err := path.Match(strings.ReplaceAll(pattern, "**", "*"), ""); err != nil {
+		return nil, fmt.Errorf("%s: %w", pattern, err)
+	}
+	var out []string
+	var walk func(dir string, segs []string) error
+	walk = func(dir string, segs []string) error {
+		if len(segs) == 0 {
+			out = append(out, dir)
+			return nil
+		}
+		name := dir
+		if name == "" {
+			name = "."
+		}
+		entries, err := fs.ReadDir(fsys, name)
+		if err != nil {
+			return err
+		}
+		if segs[0] == "**" {
+			if len(segs) > 1 { // zero directories, then one more
+				if err := walk(dir, segs[1:]); err != nil {
+					return err
+				}
+			}
+			for _, e := range entries {
+				child := path.Join(dir, e.Name())
+				switch {
+				case e.IsDir() && !strings.HasPrefix(e.Name(), "."):
+					if err := walk(child, segs); err != nil {
+						return err
+					}
+				case len(segs) == 1 && !e.IsDir() && isQueryFile(e.Name()):
+					out = append(out, child) // a trailing ** is a recursive directory listing
+				}
+			}
+			return nil
+		}
+		for _, e := range entries {
+			if ok, _ := path.Match(segs[0], e.Name()); !ok {
+				continue
+			}
+			child := path.Join(dir, e.Name())
+			if len(segs) == 1 {
+				out = append(out, child)
+			} else if e.IsDir() {
+				if err := walk(child, segs[1:]); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+	err := walk("", strings.Split(pattern, "/"))
+	sort.Strings(out)
+	return out, err
 }
 
 // isQueryFile applies sqlc's rule for listing a queries directory.

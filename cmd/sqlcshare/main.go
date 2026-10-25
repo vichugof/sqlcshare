@@ -3,6 +3,7 @@
 //	sqlcshare generate [-f sqlc.yaml] [-check] [-no-sqlc] [-no-go] [-sqlc "sqlc"] [-validate builtin|sqlc|off] [-v]
 //	sqlcshare expand -engine ENGINE -sources PATHS -out DIR [-fragments PATHS] [-root DIR] [-marker] [-no-provenance] [-check] [-validate builtin|sqlc|off] [-v]
 //	sqlcshare gocode [-f sqlc.yaml] [-check] [-v]
+//	sqlcshare stats [-f sqlc.yaml]
 //	sqlcshare version
 //
 // generate reads the options.sqlcshare block of sqlc.yaml (or sqlcshare.yaml
@@ -53,6 +54,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runExpand(args[1:], stdout, stderr)
 	case "gocode":
 		return runGocode(args[1:], stdout, stderr)
+	case "stats":
+		return runStats(args[1:], stdout, stderr)
 	case "version":
 		fmt.Fprintln(stdout, "sqlcshare", version())
 		return 0
@@ -78,6 +81,9 @@ func usage(w io.Writer) {
       expand without a configuration file; PATHS are comma-separated
   sqlcshare gocode [-f sqlc.yaml] [-check] [-v]
       write only sqlcshare.go, from the Go code sqlc generated earlier
+  sqlcshare stats [-f sqlc.yaml]
+      print how many lines the sources, fragments and expanded files hold and
+      how often each fragment is used; writes nothing
   -validate builtin (default) parses fragments and expanded statements with
       the parsers sqlc uses and reports errors at their source position;
       sqlc runs the installed sqlc's parser instead (no positions, slower)

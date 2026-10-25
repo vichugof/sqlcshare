@@ -489,10 +489,12 @@ func (x *expansion) expandUse(w *writer, d *directive, usePos Pos, depth int, st
 		scope.subst[p] = d.args[i]
 	}
 	prefix, suffix := wrap(f.Kind, f.Name)
+	w.beginSplice(usePos, f.Name)
 	w.write(prefix, usePos, SegGenerated, f.Name)
 	bts := newTextSource(f.Pos.File, []byte(f.Body), f.BodyPos)
 	x.expandRange(w, bts, scanSQL(x.e.Engine, bts.text), 0, len(f.Body), depth+1, slices.Concat(stack, []string{f.Name}), scope)
 	w.write(suffix, usePos, SegGenerated, f.Name)
+	w.endSplice()
 	return f, true
 }
 
@@ -596,6 +598,19 @@ type writer struct {
 	col  int // next output column, 1-based
 	segs []Segment
 	stmt string // derived statement the text belongs to, recorded in every segment
+	// splices are the fragment expansions in progress, innermost last. Inside
+	// one, every line after a line break is indented to the column of the
+	// directive, so a multi-line body lines up under its directive instead of
+	// keeping the indentation of the fragment file.
+	splices []splice
+	pending bool // a line break was written inside a splice; indent the next non-blank line
+}
+
+// splice records where a fragment body is being written.
+type splice struct {
+	indent int    // columns to insert before each continuation line
+	src    Pos    // the directive, which the inserted spaces map to
+	frag   string // fragment name
 }
 
 func newWriter() *writer {
@@ -604,13 +619,64 @@ func newWriter() *writer {
 
 func (w *writer) String() string { return w.buf.String() }
 
-// write appends text that starts at src, attributed to kind and frag.
-func (w *writer) write(text string, src Pos, kind SegmentKind, frag string) {
-	if text == "" {
+// beginSplice starts a fragment expansion at the current column; endSplice
+// ends the innermost one. A directive at the start of a line inside another
+// fragment's body gets that body's indentation first, so the nested body
+// aligns under the nested directive's real column.
+func (w *writer) beginSplice(src Pos, frag string) {
+	w.flushPending()
+	w.splices = append(w.splices, splice{indent: w.col - 1, src: src, frag: frag})
+}
+
+func (w *writer) endSplice() {
+	w.splices = w.splices[:len(w.splices)-1]
+	if len(w.splices) == 0 {
+		w.pending = false
+	}
+}
+
+// flushPending writes the indentation a line break inside a splice asked
+// for, as a generated segment that maps to the directive.
+func (w *writer) flushPending() {
+	if !w.pending {
 		return
 	}
-	w.segs = append(w.segs, Segment{OutLine: w.line, OutCol: w.col, Src: src, Kind: kind, Fragment: frag, Derived: w.stmt})
-	w.advance(text)
+	w.pending = false
+	sp := w.splices[len(w.splices)-1]
+	if sp.indent > 0 {
+		w.segs = append(w.segs, Segment{OutLine: w.line, OutCol: w.col, Src: sp.src, Kind: SegGenerated, Fragment: sp.frag, Derived: w.stmt})
+		w.advance(strings.Repeat(" ", sp.indent))
+	}
+}
+
+func (w *writer) indent() int {
+	if n := len(w.splices); n > 0 {
+		return w.splices[n-1].indent
+	}
+	return 0
+}
+
+// write appends text that starts at src, attributed to kind and frag. Inside
+// a splice with a non-zero indent, each line of text becomes its own segment
+// and the indentation is written as a generated segment that maps to the
+// directive, so every segment still copies its source contiguously.
+func (w *writer) write(text string, src Pos, kind SegmentKind, frag string) {
+	for text != "" {
+		if text[0] == '\n' { // blank lines stay blank
+			w.pending = false
+		}
+		w.flushPending()
+		w.segs = append(w.segs, Segment{OutLine: w.line, OutCol: w.col, Src: src, Kind: kind, Fragment: frag, Derived: w.stmt})
+		i := strings.IndexByte(text, '\n')
+		if w.indent() == 0 || i < 0 {
+			w.advance(text)
+			return
+		}
+		w.advance(text[:i+1])
+		w.pending = true
+		text = text[i+1:]
+		src = Pos{File: src.File, Line: src.Line + 1, Col: 1}
+	}
 }
 
 func (w *writer) advance(text string) {

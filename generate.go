@@ -66,7 +66,8 @@ type GeneratedFile struct {
 // Report is the output of Generate.
 type Report struct {
 	Files       []GeneratedFile
-	Removed     []string // stale outputs removed (or, with Check, that would be)
+	Removed     []string   // stale outputs removed (or, with Check, that would be)
+	Libraries   []*Library // the fragments of each target, by index; nil when the target failed
 	Diagnostics Diagnostics
 }
 
@@ -97,14 +98,15 @@ func Generate(cfg Config, opts Options) (*Report, error) {
 		return nil, err
 	}
 	fsys := os.DirFS(root)
-	rep := &Report{}
+	rep := &Report{Libraries: make([]*Library, len(cfg.Targets))}
 	drift := false
 	for ti, t := range cfg.Targets {
-		files, diags := expandTarget(fsys, t, opts.Checkers[t.Engine])
+		files, lib, diags := expandTarget(fsys, t, opts.Checkers[t.Engine])
 		rep.Diagnostics = append(rep.Diagnostics, diags...)
 		if diags.HasErrors() {
 			continue
 		}
+		rep.Libraries[ti] = lib
 		for i := range files {
 			files[i].Target = ti
 		}
@@ -159,19 +161,19 @@ func cleanRel(p string) string {
 }
 
 // expandTarget loads the fragments and expands the sources of one target.
-func expandTarget(fsys fs.FS, t Target, checker Checker) ([]GeneratedFile, Diagnostics) {
+func expandTarget(fsys fs.FS, t Target, checker Checker) ([]GeneratedFile, *Library, Diagnostics) {
 	lib, diags := Load(t.Engine, fsys, t.Fragments...)
 	if diags.HasErrors() {
-		return nil, diags
+		return nil, nil, diags
 	}
 	diags = append(diags, CheckFragments(t.Engine, lib, checker)...)
 	if diags.HasErrors() {
-		return nil, diags
+		return nil, nil, diags
 	}
 	srcs, err := resolveSQLFiles(fsys, t.Sources)
 	if err != nil {
-		diags.add(Pos{}, Error, "%v", err)
-		return nil, diags
+		diags.add(Pos{}, Error, "sources: %v", err)
+		return nil, nil, diags
 	}
 	ex := &Expander{Engine: t.Engine, Lib: lib, Marker: t.Marker, NoProvenance: t.NoProvenance, ParamLimit: t.ParamLimit, Checker: checker}
 	out := cleanRel(t.Out)
@@ -210,7 +212,7 @@ func expandTarget(fsys fs.FS, t Target, checker Checker) ([]GeneratedFile, Diagn
 		files = append(files, GeneratedFile{Source: s, Out: outRel, Text: res.Text, Map: res.Map, Statements: res.Statements})
 	}
 	sortDiagnostics(diags)
-	return files, diags
+	return files, lib, diags
 }
 
 type manifest struct {

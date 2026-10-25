@@ -32,7 +32,18 @@ ORDER BY id;
 
 -- fragment: loop_b :sql
 /*%sql loop_a*/;
-`
+
+
+-- fragment: outer_cols(a) :columns
+{a}.id,
+/*%columns inner_cols({a})*/ AS x,
+{a}.name;
+
+-- fragment: inner_cols(a) :columns
+(
+    SELECT 1
+    FROM t
+);`
 
 func mustLib(t *testing.T, engine Engine, src string) *Library {
 	t.Helper()
@@ -74,9 +85,15 @@ func TestExpand(t *testing.T) {
 			uses: "joins org_join, sql by_id",
 		},
 		{
+			name: "nested directive at the start of a fragment line aligns under the outer directive",
+			in:   "-- name: Nested :many\nSELECT\n    /*%columns outer_cols(a)*/\nFROM authors a;",
+			want: "-- name: Nested :many\n-- sqlcshare: q.sql:1 (columns outer_cols)\nSELECT\n    a.id,\n    (\n        SELECT 1\n        FROM t\n    ) AS x,\n    a.name\nFROM authors a;",
+			uses: "columns outer_cols",
+		},
+		{
 			name: "cte inside WITH, multi-line body",
 			in:   "-- name: X :many\nWITH /*%cte recent*/ recent AS (SELECT 1) /*%end*/\nSELECT count(*) FROM recent;",
-			want: "-- name: X :many\n-- sqlcshare: q.sql:1 (cte recent)\nWITH recent AS (SELECT o.* FROM orders o\nWHERE o.created_at > sqlc.narg(since)::timestamptz)\nSELECT count(*) FROM recent;",
+			want: "-- name: X :many\n-- sqlcshare: q.sql:1 (cte recent)\nWITH recent AS (SELECT o.* FROM orders o\n     WHERE o.created_at > sqlc.narg(since)::timestamptz)\nSELECT count(*) FROM recent;",
 			uses: "cte recent",
 		},
 		{
@@ -280,7 +297,7 @@ func TestSourceMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "-- name: X :many\n-- sqlcshare: q.sql:1 (cte recent, where visible)\nWITH recent AS (SELECT o.* FROM orders o\nWHERE o.created_at > sqlc.narg(since)::timestamptz)\nSELECT count(*) FROM recent r\nWHERE (r.deleted_at IS NULL AND r.org_id = sqlc.arg(org_id)) AND r.id > 0;\n"
+	want := "-- name: X :many\n-- sqlcshare: q.sql:1 (cte recent, where visible)\nWITH recent AS (SELECT o.* FROM orders o\n     WHERE o.created_at > sqlc.narg(since)::timestamptz)\nSELECT count(*) FROM recent r\nWHERE (r.deleted_at IS NULL AND r.org_id = sqlc.arg(org_id)) AND r.id > 0;\n"
 	if got := string(res.Text); got != want {
 		t.Fatalf("output:\n--- got\n%s\n--- want\n%s", got, want)
 	}
@@ -296,8 +313,9 @@ func TestSourceMap(t *testing.T) {
 		{3, 6, "q.sql:2:6", SegGenerated, "recent"}, // "recent AS (" wrapper maps to the directive
 		{3, 17, "frags.sql:11:1", SegFragment, "recent"},
 		{3, 24, "frags.sql:11:8", SegFragment, "recent"},
-		{4, 1, "frags.sql:12:1", SegFragment, "recent"},
-		{4, 7, "frags.sql:12:7", SegFragment, "recent"},
+		{4, 1, "q.sql:2:6", SegGenerated, "recent"},     // the indentation that aligns the body under its directive
+		{4, 6, "frags.sql:12:1", SegFragment, "recent"}, // the body's second line, after the indentation
+		{4, 12, "frags.sql:12:7", SegFragment, "recent"},
 		{5, 1, "q.sql:3:1", SegSource, ""}, // SELECT after the multi-line fragment
 		{5, 8, "q.sql:3:8", SegSource, ""},
 		{6, 7, "q.sql:4:7", SegGenerated, "visible"},

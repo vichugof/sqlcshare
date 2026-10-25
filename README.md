@@ -149,6 +149,16 @@ fallback text keeps the source a complete statement that editors, formatters
 and sqlc itself can parse. The second form is replaced in place. A fallback
 must be closed before the next directive, and cannot contain directives.
 
+A `:sql` fragment can hold just the table and ON clause of a join, so that
+every query keeps its own join keyword and one definition serves
+`INNER JOIN /*%sql stock_no_tag(bf, bft)*/` as well as
+`LEFT JOIN /*%sql stock_no_tag(f, bft_stock)*/`:
+
+```sql
+-- fragment: stock_no_tag(h, t) :sql
+bible_fileset_tags {t} ON {t}.hash_id = {h}.hash_id AND {t}.name = 'stock_no';
+```
+
 ### Derived count queries
 
 A list query and its count query share everything but the SELECT list and
@@ -181,6 +191,10 @@ at the derive comment. The derive comment itself never reaches sqlc.
   `-- name:` line. sqlc turns full-line comments into the Go doc comment of the
   generated method, so generated Go says which source and fragments produced
   each query.
+- **Alignment.** The lines of a multi-line fragment body are indented so
+  that they line up under the directive that spliced it, whatever the
+  indentation of the fragment file, so the expanded SQL, and the Go constant
+  sqlc makes of it, reads like hand-written SQL.
 - **Marker (opt-in).** With `marker: true`, `/* sqlcshare */` is inserted after
   the first keyword of every statement. Inline comments survive into sqlc's
   query text, so this `sqlc vet` rule flags any query that bypassed the
@@ -274,6 +288,7 @@ not generate.
 sqlcshare generate [-f sqlc.yaml] [-check] [-no-sqlc] [-no-go] [-sqlc "sqlc"] [-validate builtin|sqlc|off] [-v]
 sqlcshare expand -engine ENGINE -sources PATHS -out DIR [-fragments PATHS] [-root DIR] [-marker] [-no-provenance] [-check] [-validate builtin|sqlc|off]
 sqlcshare gocode [-f sqlc.yaml] [-check] [-v]
+sqlcshare stats [-f sqlc.yaml]
 sqlcshare version
 ```
 
@@ -284,6 +299,18 @@ block whose `queries` is the target's `out`; set `engine:` to override.
 Several expansions go under `targets:`, each with the same keys. `-check`
 writes nothing and exits 1 when any output, `sqlcshare.go` included, is out
 of date, for CI.
+
+`fragments` and `sources` are files, directories (listed one level deep, as
+sqlc lists a queries directory) or globs, in which a `**` segment matches any
+number of directories and a trailing `**` lists a directory tree, so
+`adapter/**/query/*.sql` names every query directory of a layered tree. A
+configured fragments directory must exist; an empty one, or one holding only
+a README, is fine, since only `.sql` files are read.
+
+`stats` prints, per target, how many lines the sources, fragments and
+expanded files hold and, for each fragment, how many times it is used
+directly in a statement, nested inside another fragment, and in how many
+statements. It writes nothing and is meant for measuring a migration.
 
 With Go 1.24 tool dependencies:
 
@@ -335,6 +362,11 @@ output, and the `check` package tests run the corpus through the built-in
 parsers. Phase 4 reads sqlc's generated Go instead of being a sqlc codegen
 plugin, because a plugin sees database types but not the Go types sqlc's own
 generator picks, and matching those is what makes a shared struct compile.
+
+The first real-world use is the biblebrain_lmp pilot (a MySQL backend with
+136 queries in 1,450 lines; `reports/biblebrain_lmp pilot/results.md`): 17
+fragments took 150 lines and most of the repeated business rules out of the
+queries while every generated Go struct and method stayed byte-identical.
 
 ```
 go test ./...            # add -update to rewrite testdata/golden/*/want
